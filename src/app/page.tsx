@@ -75,7 +75,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen p-8 flex flex-col items-center gap-8 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold text-center uppercase tracking-wider">
+      <h1 className="text-3xl font-bold text-center uppercase tracking-wider text-text">
         VALORANT<br /><span className="text-accent">Random Picker</span>
       </h1>
 
@@ -87,7 +87,7 @@ export default function Home() {
       />
 
       {/* Controls */}
-      <div className="flex gap-4 w-full justify-center flex-wrap-reverse md:flex-nowrap">
+      <div className="flex gap-4 w-full justify-center flex-wrap-reverse md:flex-nowrap mt-8">
         <button
           onClick={addPlayer}
           disabled={players.length >= 5}

@@ -53,7 +53,7 @@ export default function PlayerCard({
     return (
         <div className="bg-card border border-card-border rounded-xl p-4 w-full max-w-[340px] flex flex-col gap-4 relative">
             {/* Header */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center text-text">
                 <input
                     type="text"
                     value={player.name}
