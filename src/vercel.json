@@ -1,0 +1,9 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/style.css", "destination": "/style.css" },
+    { "source": "/agents.js", "destination": "/agents.js" },
+    { "source": "/main.js", "destination": "/main.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

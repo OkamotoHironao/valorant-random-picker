@@ -1,125 +1,212 @@
 /**
  * VALORANT Random Picker - Main Logic
- * MVP ver2: 除外指定 & 簡易履歴
+ * MVP ver3: パーティモード（最大5人・重複なし・個別除外）
  */
 
 (function () {
     'use strict';
 
-    // Elements
-    const pickBtn = document.getElementById('pickBtn');
-    const resultEl = document.getElementById('result');
-    const historyEl = document.getElementById('history');
-    const settingsToggle = document.getElementById('settingsToggle');
-    const settingsPanel = document.getElementById('settingsPanel');
-    const agentGrid = document.getElementById('agentGrid');
-    const exclusionCountEl = document.getElementById('exclusionCount');
-
     // State
-    const excludedAgents = new Set();
-    const pickHistory = [];
-    const MAX_HISTORY = 5;
+    let players = []; // { id: number, name: string, result: string, excluded: Set<string> }
+    let nextPlayerId = 1;
+
+    // Components
+    const partyListEl = document.getElementById('partyList');
+    const addPlayerBtn = document.getElementById('addPlayerBtn');
+    const pickAllBtn = document.getElementById('pickAllBtn');
 
     /**
      * 初期化
      */
     function init() {
-        renderAgentGrid();
-        updateExclusionCount();
-        setupEventListeners();
+        addPlayer(); // 最初の一人を追加
+        setupGlobalListeners();
+    }
+
+    function setupGlobalListeners() {
+        addPlayerBtn.addEventListener('click', () => addPlayer());
+        pickAllBtn.addEventListener('click', pickAll);
     }
 
     /**
-     * イベントリスナー設定
+     * プレイヤー追加
      */
-    function setupEventListeners() {
-        pickBtn.addEventListener('click', handlePick);
-        settingsToggle.addEventListener('click', () => {
-            settingsPanel.hidden = !settingsPanel.hidden;
-        });
-    }
-
     /**
-     * エージェントグリッド生成
+     * プレイヤー追加
      */
-    function renderAgentGrid() {
-        agentGrid.innerHTML = '';
-        AGENTS.forEach(agent => {
-            const btn = document.createElement('button');
-            btn.className = 'agent-btn';
-            btn.textContent = agent;
-            btn.onclick = () => toggleExclusion(agent, btn);
-            agentGrid.appendChild(btn);
-        });
-    }
-
-    /**
-     * 除外状態の切り替え
-     */
-    function toggleExclusion(agent, btn) {
-        if (excludedAgents.has(agent)) {
-            excludedAgents.delete(agent);
-            btn.classList.remove('excluded');
-        } else {
-            excludedAgents.add(agent);
-            btn.classList.add('excluded');
-        }
-        updateExclusionCount();
-    }
-
-    /**
-     * 除外数表示の更新
-     */
-    function updateExclusionCount() {
-        const count = excludedAgents.size;
-        exclusionCountEl.textContent = count > 0 ? `(${count})` : '';
-    }
-
-    /**
-     * ランダムピック実行
-     */
-    function handlePick() {
-        // 除外されていないエージェントのリスト作成
-        const availableAgents = AGENTS.filter(a => !excludedAgents.has(a));
-
-        if (availableAgents.length === 0) {
-            alert('全てのエージェントが除外されています');
+    function addPlayer() {
+        if (players.length >= 5) {
             return;
         }
 
-        // ランダム選択
-        const index = Math.floor(Math.random() * availableAgents.length);
-        const agent = availableAgents[index];
+        const player = {
+            id: nextPlayerId++,
+            name: `Player ${players.length + 1}`,
+            result: '?',
+            excluded: new Set(),
+            isSettingsOpen: false
+        };
 
-        displayResult(agent);
-        addToHistory(agent);
+        players.push(player);
+        renderParty();
     }
 
     /**
-     * 結果表示
+     * プレイヤー削除
      */
-    function displayResult(agent) {
-        resultEl.innerHTML = `<span class="result-agent">${agent}</span>`;
+    function removePlayer(id) {
+        if (players.length <= 1) return; // 最低1人は残す
+        players = players.filter(p => p.id !== id);
+        renderParty();
     }
 
     /**
-     * 履歴追加
+     * パーティ全体を描画
      */
-    function addToHistory(agent) {
-        pickHistory.unshift(agent);
-        if (pickHistory.length > MAX_HISTORY) {
-            pickHistory.pop();
-        }
-        renderHistory();
+    function renderParty() {
+        partyListEl.innerHTML = '';
+        players.forEach(player => {
+            const card = createPlayerCard(player);
+            partyListEl.appendChild(card);
+        });
+
+        // 5人の場合は追加ボタンを無効化
+        addPlayerBtn.disabled = players.length >= 5;
+        addPlayerBtn.style.opacity = players.length >= 5 ? 0.5 : 1;
+        addPlayerBtn.style.cursor = players.length >= 5 ? 'not-allowed' : 'pointer';
     }
 
     /**
-     * 履歴描画
+     * プレイヤーカードDOM生成
      */
-    function renderHistory() {
-        historyEl.innerHTML = pickHistory
-            .map(agent => `<span class="history-item">${agent}</span>`)
-            .join('');
+    function createPlayerCard(player) {
+        const card = document.createElement('div');
+        card.className = 'player-card';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'card-header';
+
+        const nameInput = document.createElement('input');
+        nameInput.className = 'player-name-input';
+        nameInput.value = player.name;
+        nameInput.onchange = (e) => { player.name = e.target.value; };
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.onclick = () => removePlayer(player.id);
+        if (players.length === 1) removeBtn.style.display = 'none';
+
+        header.appendChild(nameInput);
+        header.appendChild(removeBtn);
+
+        // Result
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'card-result';
+        resultDiv.innerHTML = `<span class="result-text">${player.result}</span>`;
+
+        // Settings Toggle
+        const settingsToggle = document.createElement('button');
+        settingsToggle.className = 'settings-toggle';
+        const excludedCount = player.excluded.size;
+        settingsToggle.innerHTML = `除外設定 ${excludedCount > 0 ? `(${excludedCount})` : ''} ▼`;
+
+        const exclusionPanel = document.createElement('div');
+        exclusionPanel.className = 'exclusion-panel';
+        exclusionPanel.hidden = !player.isSettingsOpen;
+
+        settingsToggle.onclick = () => {
+            player.isSettingsOpen = !player.isSettingsOpen;
+            exclusionPanel.hidden = !player.isSettingsOpen;
+        };
+
+        // Role Filters
+        const roleActions = document.createElement('div');
+        roleActions.className = 'role-actions';
+
+        // Reset Button
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'role-btn';
+        resetBtn.textContent = 'Reset';
+        resetBtn.onclick = () => {
+            player.excluded.clear();
+            renderParty(); // 再描画で反映
+        };
+        roleActions.appendChild(resetBtn);
+
+        // Role Buttons
+        ['Duelist', 'Initiator', 'Controller', 'Sentinel'].forEach(role => {
+            const btn = document.createElement('button');
+            btn.className = 'role-btn';
+            btn.textContent = `${role} NG`;
+            btn.onclick = () => {
+                AGENTS.filter(a => a.role === role).forEach(a => player.excluded.add(a.name));
+                renderParty();
+            };
+            roleActions.appendChild(btn);
+        });
+
+        // Agent Grid (Mini)
+        const agentGrid = document.createElement('div');
+        agentGrid.className = 'agent-grid-mini';
+
+        AGENTS.forEach(agent => {
+            const chip = document.createElement('div');
+            chip.className = `agent-chip ${player.excluded.has(agent.name) ? 'excluded' : ''}`;
+            chip.textContent = agent.name;
+            chip.onclick = () => {
+                if (player.excluded.has(agent.name)) {
+                    player.excluded.delete(agent.name);
+                } else {
+                    player.excluded.add(agent.name);
+                }
+                renderParty();
+            };
+            agentGrid.appendChild(chip);
+        });
+
+        exclusionPanel.appendChild(roleActions);
+        exclusionPanel.appendChild(agentGrid);
+
+        card.appendChild(header);
+        card.appendChild(resultDiv);
+        card.appendChild(settingsToggle);
+        card.appendChild(exclusionPanel);
+
+        return card;
+    }
+
+    /**
+     * 一括抽選
+     */
+    function pickAll() {
+        // 抽選済みエージェント（重複回避用）
+        const takenAgents = new Set();
+
+        // アニメーション用リセット
+        players.forEach(p => {
+            p.result = '...';
+        });
+        renderParty();
+
+        setTimeout(() => {
+            players.forEach(player => {
+                // 利用可能なエージェント: 「全体の除外設定」かつ「他の人がまだ選んでいない」
+                const available = AGENTS.filter(agent =>
+                    !player.excluded.has(agent.name) && !takenAgents.has(agent.name)
+                );
+
+                if (available.length === 0) {
+                    player.result = 'No Agent';
+                } else {
+                    const picked = available[Math.floor(Math.random() * available.length)];
+                    player.result = picked.name;
+                    takenAgents.add(picked.name);
+                }
+            });
+            renderParty();
+        }, 300); // 演出用ウェイト
     }
 
     // Start

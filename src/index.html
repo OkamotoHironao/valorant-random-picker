@@ -4,41 +4,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="VALORANTのエージェントをランダムでピック。ワンクリックで即決定。">
+  <meta name="description" content="VALORANTのエージェントをランダムでピック。パーティ対応、重複なし抽選。">
   <title>VALORANT Random Picker</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
   <main class="container">
-    <div class="card">
-      <h1 class="title">VALORANT<br><span class="title-accent">Random Picker</span></h1>
+    <h1 class="title">VALORANT<br><span class="title-accent">Random Picker</span></h1>
 
-      <div class="result" id="result">
-        <span class="result-placeholder">?</span>
-      </div>
-
-      <!-- 簡易履歴 -->
-      <div class="history" id="history">
-        <!-- JSで履歴アイコンを追加 -->
-      </div>
-
-      <button class="pick-btn" id="pickBtn">PICK</button>
-
-      <!-- 除外設定 -->
-      <div class="settings">
-        <button class="settings-toggle" id="settingsToggle">
-          除外設定 <span id="exclusionCount"></span>
-        </button>
-        <div class="settings-panel" id="settingsPanel" hidden>
-          <div class="agent-grid" id="agentGrid">
-            <!-- JSでエージェントボタンを生成 -->
-          </div>
-        </div>
-      </div>
+    <!-- プレイヤーリスト -->
+    <div class="party-list" id="partyList">
+      <!-- JSでプレイヤーカードを追加 -->
     </div>
 
-    <!-- 広告枠（AdSense審査後に差し替え） -->
+    <!-- コントロールバー -->
+    <div class="controls">
+      <button class="add-btn" id="addPlayerBtn">
+        <span>+</span> Add Player
+      </button>
+      <button class="pick-btn-main" id="pickAllBtn">PICK ALL</button>
+    </div>
+
     <!-- 広告枠（AdSense審査後に差し替え） -->
     <div class="sponsor-container">
       <div class="sponsor-placeholder">
